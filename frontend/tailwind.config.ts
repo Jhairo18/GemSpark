@@ -1,0 +1,55 @@
+import type { Config } from 'tailwindcss';
+
+export default {
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        surface: '#fbf9f8',
+        'surface-dim': '#dcd9d9',
+        'surface-bright': '#fbf9f8',
+        'surface-container-lowest': '#ffffff',
+        'surface-container-low': '#f6f3f2',
+        'surface-container': '#f1eee2',
+        'surface-container-high': '#ebe8dc',
+        'surface-container-highest': '#e5e2d7',
+        'on-surface': '#1c1c17',
+        'on-surface-variant': '#46483c',
+        outline: '#77786b',
+        'outline-variant': '#c7c8b7',
+        primary: '#076148',
+        'on-primary': '#ffffff',
+        'primary-container': '#9ef4d2',
+        'on-primary-container': '#002116',
+        secondary: '#55624c',
+        'on-secondary': '#ffffff',
+        'secondary-container': '#d8e7cb',
+        'on-secondary-container': '#131f0d',
+        tertiary: '#386666',
+        'on-tertiary': '#ffffff',
+        'tertiary-container': '#bbebeb',
+        'on-tertiary-container': '#002021',
+        error: '#ba1a1a',
+        'on-error': '#ffffff',
+        'error-container': '#ffdad6',
+        'on-error-container': '#410002',
+        warning: '#ffb900',
+        'on-warning': '#241a00',
+        'warning-container': '#ffe08d',
+        'on-warning-container': '#241a00',
+      },
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+      },
+      spacing: {
+        touch: '56px',
+        page: '24px',
+        'gap-component': '16px',
+      },
+      borderRadius: {
+        card: '16px',
+      },
+    },
+  },
+  plugins: [],
+} satisfies Config;
