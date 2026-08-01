@@ -37,7 +37,7 @@ export function BiometricsForm({
           value={Number.isNaN(value.edad) ? '' : value.edad}
           onChange={(e) => onChange({ ...value, edad: e.target.valueAsNumber })}
           onBlur={() => onTocarCampo('edad')}
-          className="min-h-touch rounded-card border border-outline-variant bg-surface-container-lowest px-4 text-lg"
+          className="min-h-touch rounded-card border border-outline-variant bg-surface-container-lowest px-4 text-lg transition-colors hover:border-primary"
         />
         {camposTocados.has('edad') && errores.edad && <p className="text-error">{errores.edad}</p>}
       </div>
@@ -50,7 +50,7 @@ export function BiometricsForm({
           id="genero"
           value={value.genero}
           onChange={(e) => onChange({ ...value, genero: e.target.value as Genero })}
-          className="min-h-touch rounded-card border border-outline-variant bg-surface-container-lowest px-4 text-lg"
+          className="min-h-touch rounded-card border border-outline-variant bg-surface-container-lowest px-4 text-lg transition-colors hover:border-primary"
         >
           {GENEROS.map((genero) => (
             <option key={genero.value} value={genero.value}>
@@ -71,7 +71,7 @@ export function BiometricsForm({
           value={Number.isNaN(value.altura) ? '' : value.altura}
           onChange={(e) => onChange({ ...value, altura: e.target.valueAsNumber })}
           onBlur={() => onTocarCampo('altura')}
-          className="min-h-touch rounded-card border border-outline-variant bg-surface-container-lowest px-4 text-lg"
+          className="min-h-touch rounded-card border border-outline-variant bg-surface-container-lowest px-4 text-lg transition-colors hover:border-primary"
         />
         {camposTocados.has('altura') && errores.altura && (
           <p className="text-error">{errores.altura}</p>
@@ -89,7 +89,7 @@ export function BiometricsForm({
           value={Number.isNaN(value.peso) ? '' : value.peso}
           onChange={(e) => onChange({ ...value, peso: e.target.valueAsNumber })}
           onBlur={() => onTocarCampo('peso')}
-          className="min-h-touch rounded-card border border-outline-variant bg-surface-container-lowest px-4 text-lg"
+          className="min-h-touch rounded-card border border-outline-variant bg-surface-container-lowest px-4 text-lg transition-colors hover:border-primary"
         />
         {camposTocados.has('peso') && errores.peso && <p className="text-error">{errores.peso}</p>}
       </div>

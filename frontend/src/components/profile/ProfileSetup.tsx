@@ -62,7 +62,7 @@ export function ProfileSetup() {
         condiciones: toCondicionesArray(condiciones),
       });
       setPerfil(respuesta);
-      navigate('/escanear');
+      navigate('/');
     } catch (err) {
       setErrorGuardado(
         err instanceof ApiError
@@ -95,7 +95,7 @@ export function ProfileSetup() {
           type="text"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          className="min-h-touch rounded-card border border-outline-variant bg-surface-container-lowest px-4 text-lg"
+          className="min-h-touch rounded-card border border-outline-variant bg-surface-container-lowest px-4 text-lg transition-colors hover:border-primary"
         />
       </div>
 
@@ -121,7 +121,7 @@ export function ProfileSetup() {
         type="button"
         disabled={!formularioValido || guardando}
         onClick={() => void guardar()}
-        className="min-h-touch rounded-full bg-primary px-8 text-lg font-bold text-on-primary disabled:opacity-50"
+        className="min-h-touch rounded-full bg-primary px-8 text-lg font-bold text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:hover:bg-primary"
       >
         {guardando ? 'Guardando...' : 'Guardar'}
       </button>

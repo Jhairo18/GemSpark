@@ -13,7 +13,7 @@ interface SwitchRowProps {
 
 function SwitchRow({ label, checked, onChange }: SwitchRowProps) {
   return (
-    <label className="flex min-h-touch cursor-pointer items-center justify-between rounded-card bg-surface-container p-4">
+    <label className="flex min-h-touch cursor-pointer items-center justify-between rounded-card bg-surface-container p-4 transition-colors hover:bg-surface-container-high">
       <span className="text-lg font-medium text-on-surface">{label}</span>
       <input
         type="checkbox"

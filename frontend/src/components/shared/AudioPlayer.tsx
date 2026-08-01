@@ -47,7 +47,7 @@ export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
       <button
         type="button"
         onClick={togglePlayback}
-        className="min-h-touch rounded-full bg-primary px-6 font-bold text-on-primary"
+        className="min-h-touch rounded-full bg-primary px-6 font-bold text-on-primary transition-colors hover:bg-primary/90"
       >
         {playing ? 'Pausar explicación' : 'Escuchar explicación'}
       </button>
