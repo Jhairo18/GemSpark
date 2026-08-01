@@ -47,6 +47,7 @@ COLLECTION_NAME = "gemspark_nutrition"
 EMBEDDING_MODEL = "gemini-embedding-2"
 EMBEDDING_DIMENSIONS = 768
 DEFAULT_GEMMA_MODEL = "gemma2:2b-instruct-q4_K_M"
+MAX_SOURCE_DISTANCE = 0.45
 CHUNK_SIZE = 1200
 CHUNK_OVERLAP = 200
 MIN_PAGE_CHARS = 80
@@ -72,6 +73,27 @@ CLINICAL_TERMS = re.compile(
     r"sodio|sal)\b",
     re.IGNORECASE,
 )
+
+CONDITION_NUTRIENTS = {
+    "diabetes": {"azucar"},
+    "hipertension": {"sal_sodio"},
+}
+
+GENERAL_WARNING_NUTRIENTS = {"grasas_saturadas", "grasas_trans"}
+
+NUTRIENT_LABELS = {
+    "azucar": "Azúcar",
+    "sal_sodio": "Sodio",
+    "grasas_saturadas": "Grasas saturadas",
+    "grasas_trans": "Grasas trans",
+}
+
+RAG_QUERIES = {
+    "azucar": "Por qué una persona con diabetes debe limitar productos con alto contenido de azúcar",
+    "sal_sodio": "Por qué una persona con hipertensión debe limitar productos con alto contenido de sodio",
+    "grasas_saturadas": "Por qué se recomienda limitar alimentos procesados altos en grasas saturadas",
+    "grasas_trans": "Por qué se recomienda evitar alimentos procesados con grasas trans",
+}
 
 
 @dataclass(frozen=True)
@@ -521,6 +543,221 @@ def text_without_numbers(text: str) -> str:
     return clean_text(re.sub(r"\d+(?:[.,]\d+)*", "", text))
 
 
+def validate_product_payload(payload: dict[str, Any]) -> None:
+    required = ("producto", "es_seguro", "nivel_riesgo_global", "insumos_clave", "usuario")
+    missing = [field for field in required if field not in payload]
+    if missing:
+        raise ValueError(f"Faltan campos requeridos: {', '.join(missing)}")
+    conditions = payload["usuario"].get("condiciones")
+    if not isinstance(conditions, list) or not conditions:
+        raise ValueError("usuario.condiciones debe ser una lista no vacia")
+
+
+def select_relevant_risks(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    conditions = set(payload["usuario"]["condiciones"])
+    condition_by_nutrient: dict[str, str] = {}
+    for condition in conditions:
+        for nutrient in CONDITION_NUTRIENTS.get(condition, set()):
+            condition_by_nutrient[nutrient] = condition
+
+    selected: list[dict[str, Any]] = []
+    for nutrient, data in payload["insumos_clave"].items():
+        if data.get("excede_limite") is not True:
+            continue
+        condition = condition_by_nutrient.get(nutrient)
+        if condition is None and nutrient not in GENERAL_WARNING_NUTRIENTS:
+            continue
+        selected.append(
+            {
+                "nutrient": nutrient,
+                "label": NUTRIENT_LABELS.get(nutrient, nutrient.replace("_", " ").title()),
+                "condition": condition,
+                "priority": 1 if condition else 2,
+                "data": data,
+            }
+        )
+    return sorted(selected, key=lambda item: (item["priority"], item["nutrient"]))
+
+
+def deterministic_detail(risk: dict[str, Any]) -> str:
+    nutrient = risk["nutrient"]
+    data = risk["data"]
+    if nutrient == "azucar":
+        return (
+            f"Contiene {data['valor_100g']} g por 100 g y supera el límite "
+            f"configurado de {data['limite_paciente_g']} g."
+        )
+    if nutrient == "sal_sodio":
+        return (
+            f"Contiene {data['sodio_mg_100g']} mg por 100 g y supera el límite "
+            f"configurado de {data['limite_sodio_paciente_mg']} mg."
+        )
+    if nutrient == "grasas_saturadas":
+        return (
+            f"Contiene {data['valor_100g']} g por 100 g y supera el parámetro "
+            f"de octógono de {data['limite_octogono_g']} g."
+        )
+    if nutrient == "grasas_trans":
+        return f"Contiene {data['valor_100g']} g de grasas trans por 100 g."
+    return str(data.get("mensaje", "Supera el límite configurado."))
+
+
+def fallback_product_explanation(risks: list[dict[str, Any]]) -> str:
+    labels = [risk["label"].lower() for risk in risks]
+    if not labels:
+        return "El producto fue evaluado de acuerdo con el perfil configurado."
+    if len(labels) == 1:
+        joined = labels[0]
+    else:
+        joined = ", ".join(labels[:-1]) + " y " + labels[-1]
+    return (
+        "Este producto no es recomendable para tu perfil porque presenta niveles "
+        f"elevados de {joined}."
+    )
+
+
+def generate_product_explanation(
+    product_name: str,
+    conditions: list[str],
+    risks: list[dict[str, Any]],
+    evidence: list[dict[str, Any]],
+    model: str,
+) -> str:
+    try:
+        import ollama
+    except ImportError as exc:
+        raise RuntimeError("Falta el cliente de Ollama. Instala AI/requirements.txt.") from exc
+
+    qualitative_risks = [
+        {
+            "nutriente": risk["label"],
+            "condicion_relacionada": risk["condition"],
+            "comparacion": "SUPERA_LIMITE_CONFIGURADO",
+        }
+        for risk in risks
+    ]
+    evidence_text = "\n\n".join(
+        f"EVIDENCIA {index}: {text_without_numbers(item['document'])}"
+        for index, item in enumerate(evidence, start=1)
+    )
+    prompt = (
+        f"Producto: {product_name}\n"
+        f"Condiciones: {', '.join(conditions)}\n"
+        f"Riesgos ya decididos por el backend: "
+        f"{json.dumps(qualitative_risks, ensure_ascii=False)}\n\n"
+        f"{evidence_text}"
+    )
+    system = (
+        "Eres la capa explicativa de GemSpark. La decisión del backend es inmutable. "
+        "Explica en español, con una sola oración de máximo 45 palabras, por qué el "
+        "producto no es recomendable para el perfil indicado. Menciona todos los "
+        "nutrientes listados. No incluyas cifras, unidades, diagnósticos, medicamentos "
+        "ni información que no aparezca en la evidencia."
+    )
+    try:
+        response = ollama.chat(
+            model=model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            options={"temperature": 0.1, "num_predict": 180},
+            keep_alive="15m",
+        )
+        explanation, _ = sanitize_explanation(response["message"]["content"])
+    except Exception as exc:
+        raise RuntimeError(f"No se pudo consultar Ollama/Gemma: {exc}") from exc
+
+    normalized = explanation.casefold()
+    if any(risk["label"].casefold() not in normalized for risk in risks):
+        return fallback_product_explanation(risks)
+    return explanation
+
+
+def explain_product(payload: dict[str, Any], model: str) -> dict[str, Any]:
+    validate_product_payload(payload)
+    risks = select_relevant_risks(payload)
+
+    evidence: list[dict[str, Any]] = []
+    for risk in risks:
+        query = RAG_QUERIES.get(risk["nutrient"])
+        if not query:
+            continue
+        result = retrieve_evidence(query, top_k=1)
+        if result and result[0]["distance"] <= MAX_SOURCE_DISTANCE:
+            result[0]["topic"] = risk["label"]
+            evidence.append(result[0])
+
+    explanation = generate_product_explanation(
+        product_name=payload["producto"]["nombre"],
+        conditions=payload["usuario"]["condiciones"],
+        risks=risks,
+        evidence=evidence,
+        model=model,
+    )
+    first_name = str(payload["usuario"].get("nombre", "")).strip()
+    if first_name:
+        explanation = f"{first_name}, {explanation[0].lower() + explanation[1:]}"
+
+    source_keys: set[tuple[str, int]] = set()
+    sources: list[dict[str, Any]] = []
+    for item in evidence:
+        metadata = item["metadata"]
+        key = (metadata["source_id"], int(metadata["page"]))
+        if key in source_keys:
+            continue
+        source_keys.add(key)
+        sources.append(
+            {
+                "tema": item["topic"],
+                "titulo": metadata["title"],
+                "pagina": int(metadata["page"]),
+                "url": metadata["url"],
+            }
+        )
+
+    reason_labels = [risk["label"].lower() for risk in risks]
+    recommendation = (
+        "Prefiere una alternativa de la misma categoría con menor contenido de "
+        + ", ".join(reason_labels[:-1])
+        + (" y " if len(reason_labels) > 1 else "")
+        + (reason_labels[-1] if reason_labels else "los nutrientes señalados")
+        + "."
+    )
+    return {
+        "producto": payload["producto"],
+        "resultado": {
+            "es_seguro": bool(payload["es_seguro"]),
+            "nivel_riesgo": payload["nivel_riesgo_global"],
+            "titulo": (
+                "Producto recomendado para tu perfil"
+                if payload["es_seguro"]
+                else "Producto no recomendado para tu perfil"
+            ),
+        },
+        "explicacion": explanation,
+        "motivos": [
+            {"nutriente": risk["label"], "detalle": deterministic_detail(risk)}
+            for risk in risks
+        ],
+        "recomendacion": recommendation,
+        "fuentes": sources,
+    }
+
+
+def command_explain_product(args: argparse.Namespace) -> int:
+    input_path = Path(args.input).resolve()
+    payload = json.loads(input_path.read_text(encoding="utf-8"))
+    result = explain_product(payload, args.model)
+    serialized = json.dumps(result, ensure_ascii=False, indent=2)
+    if args.output:
+        output_path = Path(args.output).resolve()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(serialized + "\n", encoding="utf-8")
+    print(serialized)
+    return 0
+
+
 def command_ask(args: argparse.Namespace) -> int:
     try:
         import ollama
@@ -635,6 +872,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Nombre del modelo instalado en Ollama",
     )
     ask.set_defaults(handler=command_ask)
+
+    explain = subparsers.add_parser(
+        "explain-product", help="Transformar una evaluacion del backend para el frontend"
+    )
+    explain.add_argument("input", help="Archivo JSON producido por el backend")
+    explain.add_argument("--output", help="Ruta opcional para guardar el JSON final")
+    explain.add_argument(
+        "--model", default=DEFAULT_GEMMA_MODEL, help="Modelo local instalado en Ollama"
+    )
+    explain.set_defaults(handler=command_explain_product)
 
     status = subparsers.add_parser("status", help="Mostrar estado de la base")
     status.set_defaults(handler=command_status)

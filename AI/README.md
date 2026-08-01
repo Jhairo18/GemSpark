@@ -27,6 +27,7 @@ python AI/main.py build
 python AI/main.py status
 python AI/main.py query "¿Por qué una persona hipertensa debe reducir el sodio?"
 python AI/main.py ask "¿Por qué una persona hipertensa debe reducir el sodio?"
+python AI/main.py explain-product AI/examples/product_assessment.json --output AI/examples/product_explanation.json
 ```
 
 La primera ejecución aplica OCR a las páginas escaneadas y puede tardar. La extracción
@@ -55,3 +56,8 @@ Los resultados de `query` incluyen título, página, URL y distancia coseno. Est
 recupera evidencia. `ask` recupera esa evidencia y usa el modelo local
 `gemma2:2b-instruct-q4_K_M` de Ollama para redactar una explicación puntual. La
 referencia oficial —documento, página y enlace— se agrega de forma determinística.
+
+`explain-product` recibe el JSON completo generado por el backend, conserva solo los
+riesgos pertinentes para las condiciones del usuario y produce el contrato final que
+puede devolver un endpoint al frontend. Los valores numéricos se copian del JSON de
+entrada; Gemma no los calcula ni los reformula.
