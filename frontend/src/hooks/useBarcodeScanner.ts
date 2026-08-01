@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { RefObject } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
-import type { IScannerControls } from '@zxing/browser';
 
 export type EstadoEscaner =
-  | 'idle'
   | 'solicitando_permiso'
   | 'permiso_denegado'
   | 'escaneando'
@@ -14,60 +12,69 @@ export type EstadoEscaner =
 interface UseBarcodeScannerResult {
   estado: EstadoEscaner;
   codigoDetectado: string | null;
-  iniciar: () => Promise<void>;
-  reiniciar: () => void;
 }
 
 export function useBarcodeScanner(
   videoRef: RefObject<HTMLVideoElement>,
 ): UseBarcodeScannerResult {
-  const [estado, setEstado] = useState<EstadoEscaner>('idle');
+  const [estado, setEstado] = useState<EstadoEscaner>('solicitando_permiso');
   const [codigoDetectado, setCodigoDetectado] = useState<string | null>(null);
-  const controlsRef = useRef<IScannerControls | null>(null);
 
-  const detener = useCallback(() => {
-    controlsRef.current?.stop();
-    controlsRef.current = null;
-  }, []);
-
-  const iniciar = useCallback(async () => {
+  useEffect(() => {
     if (!videoRef.current) return;
+
+    // `cancelado` vive en el closure de ESTA ejecución del efecto. Es la forma
+    // correcta de manejar cleanup con trabajo async bajo React.StrictMode: en
+    // desarrollo, React monta→limpia→vuelve a montar los efectos para detectar
+    // código inseguro. Un ref compartido entre invocaciones no sirve aquí (la
+    // segunda invocación lo resetearía antes de que la primera promesa
+    // resuelva) — por eso cada ejecución guarda su propia bandera y sus
+    // propios `controls`, así cualquier stream de cámara que se abra queda
+    // garantizado a cerrarse exactamente una vez, sin importar el orden.
+    let cancelado = false;
+    let controlsActuales: Awaited<ReturnType<BrowserMultiFormatReader['decodeFromConstraints']>> | null =
+      null;
 
     setEstado('solicitando_permiso');
     setCodigoDetectado(null);
 
     const reader = new BrowserMultiFormatReader();
 
-    try {
-      const controls = await reader.decodeFromVideoDevice(
-        undefined,
+    reader
+      .decodeFromConstraints(
+        { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } },
         videoRef.current,
         (result) => {
-          if (result) {
+          if (result && !cancelado) {
+            if (navigator.vibrate) navigator.vibrate(200);
             setCodigoDetectado(result.getText());
             setEstado('detectado');
-            controlsRef.current?.stop();
+            controlsActuales?.stop();
           }
         },
-      );
-      controlsRef.current = controls;
-      setEstado((actual) => (actual === 'detectado' ? actual : 'escaneando'));
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'NotAllowedError') {
-        setEstado('permiso_denegado');
-      } else {
-        setEstado('error');
-      }
-    }
+      )
+      .then((controls) => {
+        if (cancelado) {
+          controls.stop();
+          return;
+        }
+        controlsActuales = controls;
+        setEstado((actual) => (actual === 'detectado' ? actual : 'escaneando'));
+      })
+      .catch((err) => {
+        if (cancelado) return;
+        if (err instanceof DOMException && err.name === 'NotAllowedError') {
+          setEstado('permiso_denegado');
+        } else {
+          setEstado('error');
+        }
+      });
+
+    return () => {
+      cancelado = true;
+      controlsActuales?.stop();
+    };
   }, [videoRef]);
 
-  const reiniciar = useCallback(() => {
-    detener();
-    setEstado('idle');
-    setCodigoDetectado(null);
-  }, [detener]);
-
-  useEffect(() => detener, [detener]);
-
-  return { estado, codigoDetectado, iniciar, reiniciar };
+  return { estado, codigoDetectado };
 }

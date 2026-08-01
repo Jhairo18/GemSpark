@@ -8,11 +8,7 @@ interface BarcodeScannerProps {
 
 export function BarcodeScanner({ onDetectado }: BarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { estado, codigoDetectado, iniciar } = useBarcodeScanner(videoRef);
-
-  useEffect(() => {
-    void iniciar();
-  }, [iniciar]);
+  const { estado, codigoDetectado } = useBarcodeScanner(videoRef);
 
   useEffect(() => {
     if (estado === 'detectado' && codigoDetectado) {
@@ -41,12 +37,23 @@ export function BarcodeScanner({ onDetectado }: BarcodeScannerProps) {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-card bg-on-surface">
-      <video ref={videoRef} className="aspect-video w-full object-cover" muted playsInline />
-      <div className="pointer-events-none absolute inset-8 rounded-card border-4 border-primary-container" />
-      <p className="absolute bottom-4 left-0 right-0 text-center text-lg font-medium text-on-primary">
-        {estado === 'solicitando_permiso' ? 'Solicitando acceso a la cámara...' : 'Buscando código...'}
-      </p>
+    <div className="relative h-full w-full overflow-hidden bg-on-surface">
+      <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
+
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="relative h-48 w-64">
+          <span className="absolute left-0 top-0 h-8 w-8 rounded-tl-lg border-l-4 border-t-4 border-primary-container" />
+          <span className="absolute right-0 top-0 h-8 w-8 rounded-tr-lg border-r-4 border-t-4 border-primary-container" />
+          <span className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-b-4 border-l-4 border-primary-container" />
+          <span className="absolute bottom-0 right-0 h-8 w-8 rounded-br-lg border-b-4 border-r-4 border-primary-container" />
+        </div>
+      </div>
+
+      {estado === 'solicitando_permiso' && (
+        <p className="absolute bottom-6 left-0 right-0 text-center text-lg font-medium text-on-primary">
+          Solicitando acceso a la cámara...
+        </p>
+      )}
     </div>
   );
 }
