@@ -1,5 +1,19 @@
 [
     {
+    "codigo_barras": "7750182006088",
+    "nombre": "Gaseosa Inca Kola sabor original x 600ml",
+    "marca": "Inka Cola",
+    "nutriscore": "UNKNOWN",
+    "energia_kcal_100g": 21,
+    "proteinas_100g": 0,
+    "carbohidratos_100g": 0,
+    "azucares_100g": 10.5,
+    "grasas_totales_100g": 0,
+    "grasas_saturadas_100g": 0,
+    "sodio_100g": 0.009,
+    "fibra_100g": 0
+},
+    {
     "codigo_barras": "7613035963948",
     "nombre": "Morochas chica",
     "marca": "Nestlé",
