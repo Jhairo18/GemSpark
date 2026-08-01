@@ -1,0 +1,30 @@
+{
+  "7751271001234": {
+    "estado": "OK",
+    "alimento": {
+      "nombre": "Galletas Integrales Avena",
+      "categoria": "Galletas",
+      "sodio_mg": 120,
+      "azucar_g": 3
+    },
+    "explicacion": "Este producto está dentro de tu límite diario de sodio. Puedes consumirlo con tranquilidad."
+  },
+  "7751271005678": {
+    "estado": "ALERTA_PELIGRO",
+    "alimento": {
+      "nombre": "Galletas de Soda Clásicas",
+      "categoria": "Galletas",
+      "sodio_mg": 850,
+      "azucar_g": 2
+    },
+    "exceso_mg": 450,
+    "alternativa": {
+      "nombre": "Galletas Integrales Avena",
+      "sodio_mg": 120
+    },
+    "explicacion": "Este producto supera tu límite diario de sodio en 450 mg. Te recomendamos las Galletas Integrales Avena, que tienen mucho menos sodio."
+  },
+  "0000000000000": {
+    "estado": "NO_ENCONTRADO"
+  }
+}
