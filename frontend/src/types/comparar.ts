@@ -42,6 +42,31 @@ export interface InsumoGrasasTrans {
   mensaje: string;
 }
 
+export interface FuenteCitada {
+  tema: string;
+  titulo: string;
+  pagina: number;
+  url: string;
+}
+
+export interface MotivoRiesgo {
+  nutriente: string;
+  detalle: string;
+}
+
+export interface ExplicacionIA {
+  producto: ProductoEvaluado;
+  resultado: {
+    es_seguro: boolean;
+    nivel_riesgo: NivelRiesgo;
+    titulo: string;
+  };
+  explicacion: string;
+  motivos: MotivoRiesgo[];
+  recomendacion: string;
+  fuentes: FuenteCitada[];
+}
+
 export interface EvaluacionResponse {
   producto: ProductoEvaluado;
   es_seguro: boolean;
@@ -55,6 +80,7 @@ export interface EvaluacionResponse {
   usuario: {
     id: number | null;
     nombre: string;
+    condiciones: string[];
     umbrales: {
       limite_sodio_mg: number;
       limite_azucar_g: number;
@@ -64,4 +90,7 @@ export interface EvaluacionResponse {
       limite_grasas_trans_g?: number;
     };
   };
+  explicacion_ia: ExplicacionIA | null;
+  explicacion_ia_error: string | null;
+  alternativa: ProductoEvaluado | null;
 }

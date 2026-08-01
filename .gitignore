@@ -2,6 +2,7 @@ AI/.cache/
 AI/.env
 __pycache__/
 *.py[cod]
+backend/tts_models/
 node_modules
 dist
 dist-ssr

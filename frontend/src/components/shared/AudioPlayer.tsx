@@ -1,19 +1,25 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+import { sintetizarVoz } from '../../api/tts';
 
 interface AudioPlayerProps {
-  audioUrl?: string;
+  texto?: string;
 }
 
-/**
- * Stub: el audio real depende del TTS que entrega Jhairo. Hoy `ComparacionResponse`
- * (Entregable 2) solo trae `explicacion` (texto), no `audio_url` — a confirmar con
- * backend/IA si ese campo se agrega al contrato.
- */
-export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
+type Estado = 'idle' | 'cargando' | 'reproduciendo' | 'pausado' | 'error';
 
-  if (!audioUrl) {
+export function AudioPlayer({ texto }: AudioPlayerProps) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [estado, setEstado] = useState<Estado>('idle');
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+  }, [audioUrl]);
+
+  if (!texto) {
     return (
       <button
         type="button"
@@ -25,31 +31,52 @@ export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
     );
   }
 
-  const togglePlayback = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (playing) {
-      audio.pause();
-    } else {
-      void audio.play();
+  const alternar = async () => {
+    if (estado === 'reproduciendo') {
+      audioRef.current?.pause();
+      return;
+    }
+    if (audioUrl) {
+      void audioRef.current?.play();
+      return;
+    }
+    setEstado('cargando');
+    try {
+      const blob = await sintetizarVoz(texto);
+      setAudioUrl(URL.createObjectURL(blob));
+    } catch {
+      setEstado('error');
     }
   };
 
+  const etiqueta =
+    estado === 'cargando'
+      ? 'Generando audio...'
+      : estado === 'reproduciendo'
+        ? 'Pausar explicación'
+        : estado === 'error'
+          ? 'Error al generar audio — reintentar'
+          : 'Escuchar explicación';
+
   return (
     <>
-      <audio
-        ref={audioRef}
-        src={audioUrl}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
-      />
+      {audioUrl && (
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          autoPlay
+          onPlay={() => setEstado('reproduciendo')}
+          onPause={() => setEstado('pausado')}
+          onEnded={() => setEstado('pausado')}
+        />
+      )}
       <button
         type="button"
-        onClick={togglePlayback}
-        className="min-h-touch rounded-full bg-primary px-6 font-bold text-on-primary transition-colors hover:bg-primary/90"
+        onClick={() => void alternar()}
+        disabled={estado === 'cargando'}
+        className="min-h-touch rounded-full bg-primary px-6 font-bold text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-60"
       >
-        {playing ? 'Pausar explicación' : 'Escuchar explicación'}
+        {etiqueta}
       </button>
     </>
   );

@@ -115,6 +115,16 @@ def obtener_producto_por_codigo(codigo_barras: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def obtener_todos_productos() -> List[Dict[str, Any]]:
+    """Devuelve todo el catálogo local de productos (usado para buscar alternativas)."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM productos")
+    filas = cursor.fetchall()
+    conn.close()
+    return [dict(fila) for fila in filas]
+
+
 def guardar_usuario(datos_usuario: Dict[str, Any]) -> Dict[str, Any]:
     """Guarda o actualiza un registro de usuario en SQLite y retorna el dict estructurado."""
     conn = get_db_connection()

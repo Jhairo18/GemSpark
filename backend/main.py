@@ -1,4 +1,10 @@
-from fastapi import FastAPI, HTTPException, Query, Path, Body
+import importlib.util
+import io
+import sys
+import wave
+from pathlib import Path as PathlibPath
+
+from fastapi import FastAPI, HTTPException, Query, Path, Body, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -10,14 +16,51 @@ from database import (
     obtener_usuario_por_id,
     obtener_ultimo_usuario,
     obtener_producto_por_codigo,
+    obtener_todos_productos,
     get_db_connection
 )
 from rules import (
     calcular_imc,
     calcular_umbrales,
-    evaluar_riesgo_producto
+    evaluar_riesgo_producto,
+    buscar_alternativa_segura
 )
 from extract_data import obtener_producto_por_id
+
+
+def _cargar_ai_engine():
+    """Carga AI/main.py como módulo aislado (evita colisión de nombre con este archivo)."""
+    ruta = PathlibPath(__file__).resolve().parent.parent / "AI" / "main.py"
+    try:
+        spec = importlib.util.spec_from_file_location("gemspark_ai_engine", ruta)
+        modulo = importlib.util.module_from_spec(spec)
+        sys.modules["gemspark_ai_engine"] = modulo  # requerido por @dataclass en AI/main.py
+        spec.loader.exec_module(modulo)
+        return modulo
+    except Exception as exc:
+        print(f"Aviso: no se pudo cargar el motor de IA ({ruta}): {exc}")
+        return None
+
+
+ai_engine = _cargar_ai_engine()
+
+VOZ_MODELO_PATH = PathlibPath(__file__).resolve().parent / "tts_models" / "es_MX-ald-medium.onnx"
+_piper_voice = None
+_piper_voice_error: Optional[str] = None
+
+
+def _obtener_voz_piper():
+    """Carga perezosa (una sola vez) del modelo de voz Piper."""
+    global _piper_voice, _piper_voice_error
+    if _piper_voice is not None or _piper_voice_error is not None:
+        return _piper_voice
+    try:
+        from piper import PiperVoice
+        _piper_voice = PiperVoice.load(str(VOZ_MODELO_PATH))
+    except Exception as exc:
+        _piper_voice_error = str(exc)
+        print(f"Aviso: no se pudo cargar el modelo de voz Piper ({VOZ_MODELO_PATH}): {exc}")
+    return _piper_voice
 
 
 # Zona horaria de Perú (UTC-5)
@@ -96,6 +139,10 @@ class UsuarioResponse(BaseModel):
 class EvaluarProductoRequest(BaseModel):
     codigo_barras: str = Field(..., example="7613035963948", description="Código de barras del producto a evaluar")
     usuario_id: Optional[int] = Field(None, description="ID del usuario registrado (opcional, por defecto usa el último)")
+
+
+class HablarRequest(BaseModel):
+    texto: str = Field(..., example="Este producto no es recomendable para tu perfil.", description="Texto en español a sintetizar")
 
 
 # ENDPOINTS DE LA API
@@ -241,8 +288,18 @@ def evaluar_producto(body: EvaluarProductoRequest):
     resultado_evaluacion["usuario"] = {
         "id": usuario.get("id"),
         "nombre": usuario.get("nombre"),
+        "condiciones": usuario.get("condiciones", []),
         "umbrales": usuario.get("umbrales")
     }
+
+    # 4. Si el producto no es seguro, buscar una alternativa del mismo tipo en el catálogo
+    if not resultado_evaluacion["es_seguro"]:
+        catalogo = obtener_todos_productos()
+        resultado_evaluacion["alternativa"] = buscar_alternativa_segura(
+            producto, usuario["umbrales"], catalogo
+        )
+    else:
+        resultado_evaluacion["alternativa"] = None
 
     return resultado_evaluacion
 
@@ -254,3 +311,71 @@ def evaluar_producto_get(
 ):
     """Endpoint GET alternativo para evaluar riesgo de un producto."""
     return evaluar_producto(EvaluarProductoRequest(codigo_barras=codigo_barras, usuario_id=usuario_id))
+
+
+@app.post("/api/explicar", tags=["Evaluación de Riesgo"])
+def explicar_producto(body: EvaluarProductoRequest):
+    """
+    Evalúa el producto (misma lógica que /api/evaluar) y agrega, sobre ese
+    resultado ya decidido de forma determinística, una explicación en lenguaje
+    natural generada por Gemma (RAG sobre evidencia oficial OMS/MINSA) bajo la
+    clave "explicacion_ia", con motivos, recomendación y fuentes citadas.
+
+    Si el producto ya es seguro para el paciente, no se invoca a Gemma: es una
+    confirmación simple del motor de reglas, sin intervención del LLM (ver
+    flujo de CONTEXT.md — "Dentro del límite" no pasa por Gemma).
+
+    Si el motor de IA no está disponible, el usuario no tiene condiciones
+    registradas, o falla la consulta a Gemini/Ollama, "explicacion_ia" queda en
+    null y "explicacion_ia_error" describe el motivo — el resultado
+    determinístico de arriba siempre se retorna igual.
+    """
+    resultado = evaluar_producto(body)
+
+    if resultado["es_seguro"]:
+        resultado["explicacion_ia"] = None
+        resultado["explicacion_ia_error"] = None
+        return resultado
+
+    if ai_engine is None:
+        resultado["explicacion_ia"] = None
+        resultado["explicacion_ia_error"] = "El motor de IA no está disponible en este servidor."
+        return resultado
+
+    if not resultado["usuario"].get("condiciones"):
+        resultado["explicacion_ia"] = None
+        resultado["explicacion_ia_error"] = (
+            "La explicación de IA requiere un perfil con condiciones registradas."
+        )
+        return resultado
+
+    try:
+        resultado["explicacion_ia"] = ai_engine.explain_product(
+            resultado, ai_engine.DEFAULT_GEMMA_MODEL
+        )
+        resultado["explicacion_ia_error"] = None
+    except Exception as exc:
+        resultado["explicacion_ia"] = None
+        resultado["explicacion_ia_error"] = str(exc)
+
+    return resultado
+
+
+@app.post("/api/hablar", tags=["Voz"])
+def hablar(body: HablarRequest):
+    """
+    Sintetiza el texto recibido a voz en español usando Piper TTS (modelo local
+    es_MX-ald-medium) y responde el audio en formato WAV.
+    """
+    voz = _obtener_voz_piper()
+    if voz is None:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Motor de voz no disponible: {_piper_voice_error}"
+        )
+
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as wav_file:
+        voz.synthesize_wav(body.texto, wav_file)
+    buffer.seek(0)
+    return Response(content=buffer.read(), media_type="audio/wav")

@@ -1,5 +1,6 @@
 import math
-from typing import List, Dict, Any
+import unicodedata
+from typing import List, Dict, Any, Optional
 
 
 def calcular_imc(peso_kg: float, altura_cm: float) -> float:
@@ -276,4 +277,87 @@ def evaluar_riesgo_producto(producto: Dict[str, Any], umbrales: Dict[str, Any]) 
                 "mensaje": msg_grasas_trans
             }
         }
+    }
+
+
+# BÚSQUEDA DE ALTERNATIVA SEGURA EN EL CATÁLOGO LOCAL
+# Heurística por palabras clave sobre el nombre del producto: productos.json/SQLite
+# no tiene una columna de categoría, así que se infiere para agrupar productos
+# comparables (ej. no tiene sentido sugerir agua como alternativa a una galleta).
+
+CATEGORIA_PALABRAS_CLAVE: Dict[str, List[str]] = {
+    "galletas": ["galleta", "club social", "ritz", "oreo", "cracker"],
+    "snacks_salados": ["pringles", "papas", "chips", "snack", "chizitos", "doritos"],
+    "chocolates_dulces": ["chocolate", "cacao", "nutella", "turron", "chocman", "cremadas", "dulce de leche"],
+    "gaseosas_bebidas_azucaradas": ["gaseosa", "cola", "sporade", "jugo", "rehidratante"],
+    "aguas": ["agua"],
+    "lacteos": ["leche", "yogur", "mantequilla", "queso"],
+    "aceites": ["aceite", "olive oil"],
+    "panaderia": ["pan integral", "tostada", "pan "],
+    "cereales": ["cereal"],
+    "salsas_condimentos": ["salsa", "mayonesa", "sillao", "ketchup", "mostaza"],
+    "sal": ["sal marina", "sal "],
+    "cafe": ["cafe", "nescafe"],
+    "gelatinas_postres": ["gelatina"],
+    "licores": ["vodka", "ron ", "cerveza", "vino", "whisky", "pisco"],
+}
+
+
+def _normalizar_texto(texto: str) -> str:
+    """Minúsculas y sin tildes, para que 'Turrón' y 'turron' coincidan igual."""
+    texto = str(texto or "").strip().lower()
+    sin_tildes = unicodedata.normalize("NFD", texto)
+    return "".join(c for c in sin_tildes if unicodedata.category(c) != "Mn")
+
+
+def inferir_categoria(nombre_producto: str) -> str:
+    """Infiere una categoría aproximada del producto a partir de su nombre."""
+    nombre_normalizado = _normalizar_texto(nombre_producto)
+    for categoria, palabras_clave in CATEGORIA_PALABRAS_CLAVE.items():
+        for palabra in palabras_clave:
+            if _normalizar_texto(palabra) in nombre_normalizado:
+                return categoria
+    return "otros"
+
+
+def buscar_alternativa_segura(
+    producto_actual: Dict[str, Any],
+    umbrales: Dict[str, Any],
+    catalogo: List[Dict[str, Any]]
+) -> Optional[Dict[str, Any]]:
+    """
+    Busca en el catálogo local un producto de la misma categoría inferida que
+    sí sea seguro para los umbrales del paciente. Entre los candidatos seguros,
+    se prefiere el de menor azúcar + sodio combinados.
+
+    Devuelve None si la categoría no se pudo inferir ("otros") o si ningún
+    producto de esa categoría resulta seguro.
+    """
+    categoria_actual = inferir_categoria(producto_actual.get("nombre", ""))
+    if categoria_actual == "otros":
+        return None
+
+    candidatos_seguros: List[tuple] = []
+    for candidato in catalogo:
+        if str(candidato.get("codigo_barras")) == str(producto_actual.get("codigo_barras")):
+            continue
+        if inferir_categoria(candidato.get("nombre", "")) != categoria_actual:
+            continue
+
+        evaluacion = evaluar_riesgo_producto(candidato, umbrales)
+        if evaluacion["es_seguro"]:
+            azucar = float(candidato.get("azucares_100g", 0) or 0)
+            sodio = float(candidato.get("sodio_100g", 0) or 0)
+            candidatos_seguros.append((azucar + sodio, candidato))
+
+    if not candidatos_seguros:
+        return None
+
+    candidatos_seguros.sort(key=lambda item: item[0])
+    mejor = candidatos_seguros[0][1]
+    return {
+        "codigo_barras": mejor["codigo_barras"],
+        "nombre": mejor["nombre"],
+        "marca": mejor["marca"],
+        "nutriscore": mejor["nutriscore"]
     }

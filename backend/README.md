@@ -46,6 +46,21 @@ uvicorn main:app --reload --port 8000
 
 Documentación interactiva disponible en: `http://localhost:8000/docs`
 
+### Requisitos para la explicación de IA y la voz (opcionales, con degradación con gracia)
+
+Si faltan, el backend sigue funcionando normalmente (evaluación determinística, alternativas)
+pero `/api/explicar` devuelve `explicacion_ia: null` y `/api/hablar` responde 503.
+
+- **`AI/.env`** con `GEMINI_API_KEY=...` (ver `AI/README.md`) — usada para los embeddings de
+  consulta contra el vector store ya construido en `AI/vector_db`.
+- **Modelo de voz Piper** en `backend/tts_models/` (carpeta gitignored, ~63MB):
+  ```bash
+  mkdir -p backend/tts_models
+  curl -L -o backend/tts_models/es_MX-ald-medium.onnx "https://huggingface.co/rhasspy/piper-voices/resolve/main/es/es_MX/ald/medium/es_MX-ald-medium.onnx"
+  curl -L -o backend/tts_models/es_MX-ald-medium.onnx.json "https://huggingface.co/rhasspy/piper-voices/resolve/main/es/es_MX/ald/medium/es_MX-ald-medium.onnx.json"
+  ```
+- **Ollama** corriendo localmente con `gemma2:2b-instruct-q4_K_M` (`ollama pull gemma2:2b-instruct-q4_K_M`).
+
 ---
 
 ## 📡 Endpoints de la API

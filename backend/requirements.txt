@@ -4,3 +4,18 @@ uvicorn
 pydantic
 httpx
 
+# Motor de IA (AI/main.py): RAG con Gemini embeddings + Gemma local vía Ollama.
+# Se excluyen paddleocr/paddlepaddle/pymupdf de AI/requirements.txt: solo hacen
+# falta para reconstruir el vector store (comando "build"), no para consultarlo.
+chromadb==1.1.0
+google-genai==2.16.0
+langchain-text-splitters==0.3.11
+ollama==0.6.0
+beautifulsoup4==4.13.5
+pypdf==6.1.1
+python-dotenv==1.1.1
+truststore==0.10.4
+
+# Salida de voz (Piper TTS local)
+piper-tts
+
