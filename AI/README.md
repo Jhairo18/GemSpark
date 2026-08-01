@@ -26,6 +26,7 @@ No escribas la clave dentro del repositorio.
 python AI/main.py build
 python AI/main.py status
 python AI/main.py query "¿Por qué una persona hipertensa debe reducir el sodio?"
+python AI/main.py ask "¿Por qué una persona hipertensa debe reducir el sodio?"
 ```
 
 La primera ejecución aplica OCR a las páginas escaneadas y puede tardar. La extracción
@@ -51,4 +52,6 @@ python AI/main.py build --rebuild --force-extract
 ```
 
 Los resultados de `query` incluyen título, página, URL y distancia coseno. Esta CLI
-recupera evidencia; Gemma se conectará en el siguiente paso para redactar la explicación.
+recupera evidencia. `ask` recupera esa evidencia y usa el modelo local
+`gemma2:2b-instruct-q4_K_M` de Ollama para redactar una explicación puntual. La
+referencia oficial —documento, página y enlace— se agrega de forma determinística.

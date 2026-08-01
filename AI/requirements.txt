@@ -3,6 +3,7 @@ chromadb==1.1.0
 google-genai==2.16.0
 langchain-text-splitters==0.3.11
 numpy
+ollama==0.6.0
 paddleocr==2.7.0.3
 paddlepaddle==2.6.1
 Pillow
