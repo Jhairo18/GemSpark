@@ -15,11 +15,15 @@ export interface PerfilClinicoRequest {
 }
 
 export interface PerfilClinicoResponse extends PerfilClinicoRequest {
+  id?: number;
   datos_biometricos: DatosBiometricos & { imc: number }; // imc solo viene en la respuesta, lo calcula el backend
   umbrales: {
     limite_sodio_mg: number;
     limite_azucar_g: number;
-    origen: 'condicion_paciente' | 'estandar_minsa';
+    origen: 'condicion_paciente' | 'ley_octogonos';
+    get_kcal?: number;
+    limite_grasas_saturadas_g?: number;
+    limite_grasas_trans_g?: number;
   };
   actualizado_en: string; // ISO 8601
 }

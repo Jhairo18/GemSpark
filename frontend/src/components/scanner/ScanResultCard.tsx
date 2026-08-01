@@ -1,39 +1,50 @@
 import { ResultCard } from '../shared/ResultCard';
 import { AudioPlayer } from '../shared/AudioPlayer';
-import type { ComparacionResponse } from '../../types/comparar';
+import type { EvaluacionResponse, NivelRiesgo } from '../../types/comparar';
 
 interface ScanResultCardProps {
-  resultado: ComparacionResponse;
+  resultado: EvaluacionResponse;
 }
 
-export function ScanResultCard({ resultado }: ScanResultCardProps) {
-  const { estado, alimento, exceso_mg, alternativa, explicacion } = resultado;
+const ETIQUETA_INSUMO: Record<string, string> = {
+  azucar: 'Azúcar',
+  sal_sodio: 'Sal / Sodio',
+  grasas_saturadas: 'Grasas saturadas',
+  grasas_trans: 'Grasas trans',
+};
 
-  const mensaje =
-    estado === 'OK'
-      ? `${alimento.nombre} está dentro de tu límite de sodio (${alimento.sodio_mg} mg).`
-      : `${alimento.nombre} supera tu límite de sodio en ${exceso_mg ?? '—'} mg.`;
+const ESTILO_NIVEL: Record<NivelRiesgo, string> = {
+  Alto: 'bg-error-container text-on-error-container',
+  Moderado: 'bg-secondary-container text-on-secondary-container',
+  Bajo: 'bg-primary-container text-on-primary-container',
+};
+
+export function ScanResultCard({ resultado }: ScanResultCardProps) {
+  const { producto, es_seguro, nivel_riesgo_global, insumos_clave } = resultado;
 
   return (
     <ResultCard
-      variant={estado === 'OK' ? 'ok' : 'alerta_peligro'}
-      titulo={estado === 'OK' ? 'Producto seguro' : 'Alerta de producto'}
-      mensaje={mensaje}
+      variant={es_seguro ? 'ok' : 'alerta_peligro'}
+      titulo={es_seguro ? 'Producto seguro' : 'Alerta de producto'}
+      mensaje={`${producto.nombre} (${producto.marca}) — riesgo global: ${nivel_riesgo_global}.`}
       acciones={
         <div className="flex flex-col gap-3">
-          {estado === 'ALERTA_PELIGRO' && alternativa && (
-            <div className="flex items-center gap-3 rounded-card bg-surface-container-lowest p-3">
-              <div className="flex h-12 w-12 flex-none items-center justify-center rounded-card bg-secondary-container text-2xl">
-                🥣
-              </div>
+          {Object.entries(insumos_clave).map(([clave, insumo]) => (
+            <div
+              key={clave}
+              className="flex items-center justify-between gap-3 rounded-card bg-surface-container-lowest p-3"
+            >
               <div>
-                <p className="font-bold text-on-surface">{alternativa.nombre}</p>
-                <p className="text-sm text-on-surface-variant">Bajo en sodio ({alternativa.sodio_mg} mg)</p>
-                <span className="text-xs font-bold text-primary">Opción segura</span>
+                <p className="font-bold text-on-surface">{ETIQUETA_INSUMO[clave] ?? clave}</p>
+                <p className="text-sm text-on-surface-variant">{insumo.mensaje}</p>
               </div>
+              <span
+                className={`flex-none rounded-full px-3 py-1 text-xs font-bold ${ESTILO_NIVEL[insumo.nivel_riesgo]}`}
+              >
+                {insumo.nivel_riesgo}
+              </span>
             </div>
-          )}
-          {explicacion && <p className="text-base">{explicacion}</p>}
+          ))}
           <AudioPlayer />
         </div>
       }

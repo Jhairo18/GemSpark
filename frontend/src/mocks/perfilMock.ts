@@ -24,7 +24,7 @@ function calcularUmbrales(condiciones: PerfilClinicoRequest['condiciones']) {
   if (tieneDiabetes) {
     return { limite_sodio_mg: 2000, limite_azucar_g: 5, origen: 'condicion_paciente' as const };
   }
-  return { limite_sodio_mg: 2000, limite_azucar_g: 50, origen: 'estandar_minsa' as const };
+  return { limite_sodio_mg: 2000, limite_azucar_g: 50, origen: 'ley_octogonos' as const };
 }
 
 function calcularImc(alturaCm: number, pesoKg: number): number {

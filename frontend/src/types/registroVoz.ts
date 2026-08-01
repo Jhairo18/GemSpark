@@ -1,4 +1,4 @@
-import type { EstadoComparacion } from './comparar';
+export type EstadoComparacion = 'OK' | 'ALERTA_PELIGRO';
 
 export interface RegistroComidaRequest {
   transcripcion: string;
