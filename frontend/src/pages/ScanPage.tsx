@@ -44,8 +44,11 @@ export function ScanPage() {
   const [modoManual, setModoManual] = useState(false);
   const [codigoManual, setCodigoManual] = useState('');
   const [linternaActiva, setLinternaActiva] = useState(false);
+  const [codigoEscaneado, setCodigoEscaneado] = useState<string | null>(null);
 
   const manejarDeteccion = async (codigoBarras: string) => {
+    console.log('✅ [ScanPage] Código de barras reconocido:', codigoBarras);
+    setCodigoEscaneado(codigoBarras);
     setEstado('comparando');
     try {
       const respuesta = await comparar(codigoBarras);
@@ -53,9 +56,9 @@ export function ScanPage() {
       setEstado('resultado');
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
-        setMensajeError('No encontramos este producto en nuestro catálogo.');
+        setMensajeError(`No encontramos el producto con código ${codigoBarras} en el catálogo.`);
       } else {
-        setMensajeError('No se pudo comparar el producto. Verifica tu conexión.');
+        setMensajeError(`Error con el código ${codigoBarras}. Verifica tu conexión.`);
       }
       setEstado('error');
     }
@@ -67,6 +70,7 @@ export function ScanPage() {
     setModoManual(false);
     setCodigoManual('');
     setLinternaActiva(false);
+    setCodigoEscaneado(null);
     setEstado('escaneando');
   };
 
@@ -98,9 +102,21 @@ export function ScanPage() {
         </div>
 
         <div className="flex flex-col gap-gap-component rounded-t-card bg-surface p-page">
+          {codigoEscaneado && (
+            <div className="flex items-center justify-between rounded-card bg-secondary-container p-3 text-on-secondary-container">
+              <div>
+                <p className="text-xs font-semibold uppercase opacity-80">Último Código Reconocido</p>
+                <p className="font-mono text-2xl font-black tracking-widest">{codigoEscaneado}</p>
+              </div>
+              <span className="rounded-full bg-primary/20 px-3 py-1 text-xs font-bold text-primary">
+                En Consola 💻
+              </span>
+            </div>
+          )}
+
           <div className="text-center">
             <h2 className="text-2xl font-bold text-on-surface">Escaneo de Producto</h2>
-            <p className="text-lg text-on-surface-variant">Apunta al código de barras del producto</p>
+            <p className="text-lg text-on-surface-variant">La cámara permanece activa escaneando códigos</p>
           </div>
           <button
             type="button"
@@ -152,6 +168,18 @@ export function ScanPage() {
             Volver a usar la cámara
           </button>
         </form>
+      )}
+
+      {codigoEscaneado && (
+        <div className="flex items-center justify-between rounded-card bg-surface-container-high p-4 text-on-surface border border-outline-variant shadow-sm">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Código Reconocido</p>
+            <p className="font-mono text-2xl font-black text-primary tracking-widest">{codigoEscaneado}</p>
+          </div>
+          <span className="rounded-full bg-secondary-container px-3 py-1 text-xs font-bold text-on-secondary-container">
+            Impreso en Consola 💻
+          </span>
+        </div>
       )}
 
       {estado === 'comparando' && (

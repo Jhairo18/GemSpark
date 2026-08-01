@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
 import { useBarcodeScanner } from '../../hooks/useBarcodeScanner';
 
@@ -8,13 +8,7 @@ interface BarcodeScannerProps {
 
 export function BarcodeScanner({ onDetectado }: BarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { estado, codigoDetectado } = useBarcodeScanner(videoRef);
-
-  useEffect(() => {
-    if (estado === 'detectado' && codigoDetectado) {
-      onDetectado(codigoDetectado);
-    }
-  }, [estado, codigoDetectado, onDetectado]);
+  const { estado } = useBarcodeScanner(videoRef, { onDetectado });
 
   if (estado === 'permiso_denegado') {
     return (
@@ -41,7 +35,7 @@ export function BarcodeScanner({ onDetectado }: BarcodeScannerProps) {
       <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
 
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="relative h-48 w-64">
+        <div className="relative h-24 w-[80%]">
           <span className="absolute left-0 top-0 h-8 w-8 rounded-tl-lg border-l-4 border-t-4 border-primary-container" />
           <span className="absolute right-0 top-0 h-8 w-8 rounded-tr-lg border-r-4 border-t-4 border-primary-container" />
           <span className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-b-4 border-l-4 border-primary-container" />
