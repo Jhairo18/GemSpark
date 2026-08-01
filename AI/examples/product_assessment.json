@@ -1,0 +1,56 @@
+{
+  "producto": {
+    "codigo_barras": "7613035963948",
+    "nombre": "Galletas Morochas",
+    "marca": "Nestlé",
+    "nutriscore": "E"
+  },
+  "es_seguro": false,
+  "nivel_riesgo_global": "Alto",
+  "insumos_clave": {
+    "azucar": {
+      "nivel_riesgo": "Alto",
+      "valor_100g": 28.5,
+      "unidad": "g/100g",
+      "limite_paciente_g": 5.0,
+      "excede_limite": true,
+      "mensaje": "Riesgo Alto: Contiene 28.5g de azúcar por 100g."
+    },
+    "sal_sodio": {
+      "nivel_riesgo": "Alto",
+      "sodio_mg_100g": 420.0,
+      "sal_g_100g": 1.07,
+      "limite_sodio_paciente_mg": 350.0,
+      "excede_limite": true,
+      "mensaje": "Riesgo Alto: Contiene 420.0mg de sodio por 100g."
+    },
+    "grasas_saturadas": {
+      "nivel_riesgo": "Alto",
+      "valor_100g": 9.0,
+      "unidad": "g/100g",
+      "limite_octogono_g": 6.0,
+      "excede_limite": true,
+      "mensaje": "Riesgo Alto: Contiene 9.0g de grasas saturadas por 100g."
+    },
+    "grasas_trans": {
+      "nivel_riesgo": "Bajo",
+      "valor_100g": 0.0,
+      "unidad": "g/100g",
+      "excede_limite": false,
+      "mensaje": "Riesgo Bajo: Sin presencia significativa de grasas trans."
+    }
+  },
+  "usuario": {
+    "id": 1,
+    "nombre": "Don Juan",
+    "condiciones": ["hipertension", "diabetes"],
+    "umbrales": {
+      "limite_sodio_mg": 350.0,
+      "limite_azucar_g": 5.0,
+      "origen": "condicion_paciente",
+      "get_kcal": 1833.0,
+      "limite_grasas_saturadas_g": 20.4,
+      "limite_grasas_trans_g": 2.0
+    }
+  }
+}

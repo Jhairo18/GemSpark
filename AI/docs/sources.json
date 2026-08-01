@@ -1,0 +1,82 @@
+[
+  {
+    "source_id": "minsa_guias_alimentarias_2019",
+    "file": "01_guias_alimentarias_peru.pdf",
+    "institution": "Ministerio de Salud del Peru / Instituto Nacional de Salud",
+    "title": "Guias alimentarias para la poblacion peruana",
+    "year": 2019,
+    "usage": ["rag"],
+    "url": "https://www.gob.pe/institucion/minsa/informes-publicaciones/314037-guias-alimentarias-para-la-poblacion-peruana",
+    "downloaded_at": "2026-08-01"
+  },
+  {
+    "source_id": "ins_tablas_composicion_2017",
+    "file": "02_tablas_composicion_alimentos_peru_2017.pdf",
+    "institution": "Instituto Nacional de Salud / CENAN",
+    "title": "Tablas peruanas de composicion de alimentos",
+    "year": 2017,
+    "usage": ["structured_data", "rag"],
+    "url": "https://repositorio.ins.gob.pe/items/7dd870ba-42db-449c-bef2-5d67d881383f",
+    "downloaded_at": "2026-08-01"
+  },
+  {
+    "source_id": "ins_tablas_auxiliares_2020",
+    "file": "03_tablas_auxiliares_regimenes_alimentarios.pdf",
+    "institution": "Instituto Nacional de Salud / CENAN",
+    "title": "Tablas Auxiliares para la Formulacion y Evaluacion de Regimenes Alimentarios",
+    "year": 2020,
+    "usage": ["structured_data", "rag"],
+    "url": "https://www.gob.pe/institucion/ins/informes-publicaciones/1326904-tablas-auxiliares-para-la-formulacion-y-evaluacion-de-regimenes-alimentarios",
+    "downloaded_at": "2026-08-01"
+  },
+  {
+    "source_id": "ins_guia_intercambio_2014",
+    "file": "04_guia_intercambio_alimentos.pdf",
+    "institution": "Instituto Nacional de Salud / CENAN",
+    "title": "Guia de intercambio de alimentos",
+    "year": 2014,
+    "usage": ["structured_data", "rag"],
+    "url": "https://www.gob.pe/institucion/ins/informes-publicaciones/4209867-guia-de-intercambio-de-alimentos",
+    "downloaded_at": "2026-08-01"
+  },
+  {
+    "source_id": "minsa_manual_advertencias_2018",
+    "file": "05_manual_advertencias_publicitarias.pdf",
+    "institution": "Ministerio de Salud del Peru",
+    "title": "Manual de Advertencias Publicitarias - Decreto Supremo 012-2018-SA",
+    "year": 2018,
+    "usage": ["rules", "rag"],
+    "url": "https://www.gob.pe/institucion/produce/normas-legales/185544-012-2018-sa",
+    "downloaded_at": "2026-08-01"
+  },
+  {
+    "source_id": "minsa_gpc_diabetes_tipo2_2016",
+    "file": "06_gpc_diabetes_mellitus_tipo_2.pdf",
+    "institution": "Ministerio de Salud del Peru",
+    "title": "Guia de practica clinica para el diagnostico, tratamiento y control de la diabetes mellitus tipo 2 en el primer nivel de atencion",
+    "year": 2016,
+    "usage": ["rag"],
+    "url": "https://bvs.minsa.gob.pe/local/CONTENIDO/7507.pdf",
+    "downloaded_at": "2026-08-01"
+  },
+  {
+    "source_id": "ins_gpc_hipertension_2026",
+    "file": "07_gpc_hipertension_adultos_2026.pdf",
+    "institution": "Instituto Nacional de Salud / CETS",
+    "title": "Guia de practica clinica para la prevencion, diagnostico y tratamiento de la hipertension arterial en adultos",
+    "year": 2026,
+    "usage": ["rag"],
+    "url": "https://www.gob.pe/institucion/ins/informes-publicaciones/8183363-guia-tecnica-n-001-ins-cets-2026-vs-resumida-guia-de-practica-clinica-para-la-prevencion-diagnostico-y-tratamiento-de-la-hipertension-arterial-en-adultos",
+    "downloaded_at": "2026-08-01"
+  },
+  {
+    "source_id": "who_sodium_guideline_2012",
+    "file": "08_oms_guia_sodio.html",
+    "institution": "World Health Organization",
+    "title": "Guideline: sodium intake for adults and children",
+    "year": 2012,
+    "usage": ["rag"],
+    "url": "https://www.who.int/publications/i/item/9789241504836",
+    "downloaded_at": "2026-08-01"
+  }
+]

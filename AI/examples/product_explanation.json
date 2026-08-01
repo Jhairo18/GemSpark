@@ -1,0 +1,49 @@
+{
+  "producto": {
+    "codigo_barras": "7613035963948",
+    "nombre": "Galletas Morochas",
+    "marca": "Nestlé",
+    "nutriscore": "E"
+  },
+  "resultado": {
+    "es_seguro": false,
+    "nivel_riesgo": "Alto",
+    "titulo": "Producto no recomendado para tu perfil"
+  },
+  "explicacion": "Don Juan, las galletas Morochas contienen altos niveles de azúcar, sodio y grasas saturadas, lo que las hace poco recomendables para personas con hipertension o diabetes.",
+  "motivos": [
+    {
+      "nutriente": "Azúcar",
+      "detalle": "Contiene 28.5 g por 100 g y supera el límite configurado de 5.0 g."
+    },
+    {
+      "nutriente": "Sodio",
+      "detalle": "Contiene 420.0 mg por 100 g y supera el límite configurado de 350.0 mg."
+    },
+    {
+      "nutriente": "Grasas saturadas",
+      "detalle": "Contiene 9.0 g por 100 g y supera el parámetro de octógono de 6.0 g."
+    }
+  ],
+  "recomendacion": "Prefiere una alternativa de la misma categoría con menor contenido de azúcar, sodio y grasas saturadas.",
+  "fuentes": [
+    {
+      "tema": "Azúcar",
+      "titulo": "Guia de practica clinica para el diagnostico, tratamiento y control de la diabetes mellitus tipo 2 en el primer nivel de atencion",
+      "pagina": 24,
+      "url": "https://bvs.minsa.gob.pe/local/CONTENIDO/7507.pdf"
+    },
+    {
+      "tema": "Sodio",
+      "titulo": "Guia de practica clinica para la prevencion, diagnostico y tratamiento de la hipertension arterial en adultos",
+      "pagina": 44,
+      "url": "https://www.gob.pe/institucion/ins/informes-publicaciones/8183363-guia-tecnica-n-001-ins-cets-2026-vs-resumida-guia-de-practica-clinica-para-la-prevencion-diagnostico-y-tratamiento-de-la-hipertension-arterial-en-adultos"
+    },
+    {
+      "tema": "Grasas saturadas",
+      "titulo": "Guias alimentarias para la poblacion peruana",
+      "pagina": 25,
+      "url": "https://www.gob.pe/institucion/minsa/informes-publicaciones/314037-guias-alimentarias-para-la-poblacion-peruana"
+    }
+  ]
+}
