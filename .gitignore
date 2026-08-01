@@ -1,0 +1,5 @@
+AI/vector_db/
+AI/.cache/
+AI/.env
+__pycache__/
+*.py[cod]
